@@ -1,0 +1,164 @@
+{
+  "entities": {
+    "Category": {
+      "title": "Category",
+      "description": "Task categories",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "uid": { "type": "string" }
+      },
+      "required": ["id", "name", "uid"]
+    },
+    "Task": {
+      "title": "Task",
+      "description": "Microjob tasks",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "income": { "type": "number" },
+        "link": { "type": "string" },
+        "categoryId": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "uid": { "type": "string" }
+      },
+      "required": ["id", "name", "income", "categoryId", "createdAt", "uid"]
+    },
+    "Device": {
+      "title": "Device",
+      "description": "User devices",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "uid": { "type": "string" }
+      },
+      "required": ["id", "name", "uid"]
+    },
+    "Account": {
+      "title": "Account",
+      "description": "Microjob accounts",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "deviceId": { "type": "string" },
+        "name": { "type": "string" },
+        "siteName": { "type": "string" },
+        "email": { "type": "string" },
+        "password": { "type": "string" },
+        "link": { "type": "string" },
+        "notes": { "type": "string" },
+        "uid": { "type": "string" }
+      },
+      "required": ["id", "deviceId", "name", "siteName", "email", "password", "uid"]
+    },
+    "Note": {
+      "title": "Note",
+      "description": "Personal notes",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "content": { "type": "string" },
+        "uid": { "type": "string" }
+      },
+      "required": ["id", "name", "content", "uid"]
+    },
+    "Link": {
+      "title": "Link",
+      "description": "Important links",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "url": { "type": "string" },
+        "uid": { "type": "string" }
+      },
+      "required": ["id", "name", "url", "uid"]
+    },
+    "Report": {
+      "title": "Report",
+      "description": "Task completion reports",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "taskId": { "type": "string" },
+        "taskName": { "type": "string" },
+        "income": { "type": "number" },
+        "deviceId": { "type": "string" },
+        "deviceName": { "type": "string" },
+        "accountId": { "type": "string" },
+        "accountEmail": { "type": "string" },
+        "timestamp": { "type": "string" },
+        "uid": { "type": "string" }
+      },
+      "required": ["id", "taskId", "taskName", "income", "deviceId", "deviceName", "timestamp", "uid"]
+    },
+    "Issue": {
+      "title": "Issue",
+      "description": "Task issues reported by users",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "taskId": { "type": "string" },
+        "taskName": { "type": "string" },
+        "message": { "type": "string" },
+        "timestamp": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "resolved"] },
+        "uid": { "type": "string" }
+      },
+      "required": ["id", "taskId", "taskName", "message", "timestamp", "status", "uid"]
+    },
+    "User": {
+      "title": "User",
+      "description": "User settings and profile",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "selectedDeviceId": { "type": "string" },
+        "role": { "type": "string", "enum": ["admin", "user"] }
+      },
+      "required": ["uid"]
+    }
+  },
+  "firestore": {
+    "/categories/{categoryId}": {
+      "schema": "Category",
+      "description": "Collection of categories"
+    },
+    "/tasks/{taskId}": {
+      "schema": "Task",
+      "description": "Collection of tasks"
+    },
+    "/devices/{deviceId}": {
+      "schema": "Device",
+      "description": "Collection of devices"
+    },
+    "/accounts/{accountId}": {
+      "schema": "Account",
+      "description": "Collection of accounts"
+    },
+    "/notes/{noteId}": {
+      "schema": "Note",
+      "description": "Collection of notes"
+    },
+    "/links/{linkId}": {
+      "schema": "Link",
+      "description": "Collection of links"
+    },
+    "/reports/{reportId}": {
+      "schema": "Report",
+      "description": "Collection of reports"
+    },
+    "/issues/{issueId}": {
+      "schema": "Issue",
+      "description": "Collection of issues"
+    },
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Collection of user profiles and settings"
+    }
+  }
+}

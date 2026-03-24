@@ -1,0 +1,118 @@
+@import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Hind Siliguri", ui-sans-serif, system-ui, sans-serif;
+  --color-sage-50: #f4f7f4;
+  --color-sage-100: #e8f0e8;
+  --color-sage-200: #d1e1d1;
+  --color-sage-300: #b9cdb9;
+  --color-sage-400: #a2b9a2;
+  --color-sage-500: #8ba58b;
+  --color-forest-900: #0a2e0a;
+  --color-forest-800: #1a3c1a;
+  
+  /* Dark Mode Colors */
+  --color-dark-bg: #050505;
+  --color-dark-card: #0f0f0f;
+  --color-dark-border: #1a1a1a;
+  --color-dark-text: #e0e0e0;
+  --color-dark-muted: #808080;
+  --color-dark-accent: #00ff00;
+}
+
+@layer base {
+  :root {
+    --bg-main: var(--color-sage-50);
+    --text-main: var(--color-forest-900);
+    color-scheme: light;
+  }
+
+  .dark {
+    --bg-main: var(--color-dark-bg);
+    --text-main: var(--color-dark-text);
+    color-scheme: dark;
+  }
+
+  html, body {
+    background-color: var(--bg-main);
+    color: var(--text-main);
+    @apply font-sans antialiased selection:bg-sage-200 selection:text-forest-900 transition-colors duration-300;
+  }
+
+  .dark html, .dark body {
+    @apply selection:bg-dark-accent selection:text-dark-bg;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-forest-900 hover:bg-forest-800 text-white px-8 py-4 rounded-full transition-all duration-300 font-bold flex items-center justify-center gap-3 shadow-lg shadow-forest-900/10 active:scale-95;
+  }
+
+  .dark .btn-primary {
+    @apply bg-dark-accent text-dark-bg hover:opacity-90 shadow-dark-accent/10;
+  }
+
+  .btn-secondary {
+    @apply bg-white border border-sage-100 text-forest-800 px-8 py-4 rounded-full transition-all duration-300 font-bold flex items-center justify-center gap-3 hover:bg-sage-100 shadow-sm active:scale-95;
+  }
+
+  .dark .btn-secondary {
+    @apply bg-dark-card border-dark-border text-dark-text hover:bg-dark-border;
+  }
+
+  .input-field {
+    @apply w-full bg-white border border-sage-100 rounded-3xl px-6 py-4 focus:outline-none focus:ring-4 focus:ring-sage-200/50 focus:border-sage-200 transition-all duration-300 placeholder:text-sage-300 text-lg font-bold text-forest-800 shadow-sm;
+  }
+
+  .dark .input-field {
+    @apply bg-dark-card border-dark-border text-dark-text focus:ring-dark-accent/20 focus:border-dark-accent placeholder:text-dark-muted;
+  }
+
+  .card {
+    @apply bg-white rounded-[2.5rem] p-8 border border-sage-100/50 shadow-sm hover:shadow-md transition-all duration-500;
+  }
+
+  .dark .card {
+    @apply bg-dark-card border-dark-border shadow-none hover:border-dark-muted/30;
+  }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-sage-200 rounded-full hover:bg-sage-300 transition-colors;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  @apply bg-dark-border hover:bg-dark-muted;
+}
+
+/* Hide scrollbar */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.4s ease-out forwards;
+}
