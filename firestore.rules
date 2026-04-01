@@ -93,12 +93,12 @@ service cloud.firestore {
     }
 
     function isValidAccount(data) {
-      return hasRequiredFields(['id', 'deviceId', 'name', 'email', 'password', 'uid']) &&
+      return hasRequiredFields(['id', 'deviceId', 'name', 'siteName', 'email', 'password', 'uid']) &&
              hasOnlyAllowedFields(['id', 'deviceId', 'name', 'siteName', 'email', 'password', 'link', 'notes', 'uid']) &&
              data.id is string &&
              data.deviceId is string && data.deviceId.size() > 0 &&
              data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
-             (!('siteName' in data) || data.siteName is string) &&
+             data.siteName is string && data.siteName.size() > 0 && data.siteName.size() < 100 &&
              data.email is string && data.email.size() > 0 &&
              data.password is string && data.password.size() > 0 &&
              (!('link' in data) || data.link is string) &&

@@ -1212,6 +1212,7 @@ function AnalyticsView({ reports, selectedDevice, accounts, user }: { reports: R
         return {
           id: acc.id,
           name: acc.name || 'N/A',
+          siteName: acc.siteName,
           email: acc.email,
           tasks: accReports.length,
           income: accReports.reduce((sum, r) => sum + r.income, 0)
@@ -1280,6 +1281,7 @@ function AnalyticsView({ reports, selectedDevice, accounts, user }: { reports: R
           <thead>
             <tr style={{ background: '#14532d', color: 'white', textAlign: 'left' }}>
               <th style={{ padding: '12px', border: '1px solid #14532d' }}>নাম</th>
+              <th style={{ padding: '12px', border: '1px solid #14532d' }}>সাইট</th>
               <th style={{ padding: '12px', border: '1px solid #14532d' }}>ইমেইল</th>
               <th style={{ padding: '12px', border: '1px solid #14532d', textAlign: 'center' }}>কাজ</th>
               <th style={{ padding: '12px', border: '1px solid #14532d', textAlign: 'right' }}>আয়</th>
@@ -1289,13 +1291,14 @@ function AnalyticsView({ reports, selectedDevice, accounts, user }: { reports: R
             {stats.accountStats.map((s, idx) => (
               <tr key={idx} style={{ background: idx % 2 === 0 ? '#ffffff' : '#f9fafb' }}>
                 <td style={{ padding: '12px', border: '1px solid #e5e7eb' }}>{s.name}</td>
+                <td style={{ padding: '12px', border: '1px solid #e5e7eb' }}>{s.siteName}</td>
                 <td style={{ padding: '12px', border: '1px solid #e5e7eb' }}>{s.email}</td>
                 <td style={{ padding: '12px', border: '1px solid #e5e7eb', textAlign: 'center' }}>{s.tasks}</td>
                 <td style={{ padding: '12px', border: '1px solid #e5e7eb', textAlign: 'right' }}>${s.income.toFixed(2)}</td>
               </tr>
             ))}
             <tr style={{ background: '#f3f4f6', fontWeight: 'bold' }}>
-              <td colSpan={2} style={{ padding: '12px', border: '1px solid #e5e7eb' }}>সর্বমোট</td>
+              <td colSpan={3} style={{ padding: '12px', border: '1px solid #e5e7eb' }}>সর্বমোট</td>
               <td style={{ padding: '12px', border: '1px solid #e5e7eb', textAlign: 'center' }}>{stats.totalTasks}</td>
               <td style={{ padding: '12px', border: '1px solid #e5e7eb', textAlign: 'right' }}>${stats.totalIncome.toFixed(2)}</td>
             </tr>
@@ -1353,7 +1356,7 @@ function AnalyticsView({ reports, selectedDevice, accounts, user }: { reports: R
               {stats.accountStats.map((s, i) => (
                 <tr key={i} className="group hover:bg-sage-50/50 dark:hover:bg-dark-bg/50 transition-colors">
                   <td className="py-6 px-4">
-                    <div className="font-black text-forest-900 dark:text-dark-text">{s.name}</div>
+                    <div className="font-black text-forest-900 dark:text-dark-text">{s.siteName}</div>
                     <div className="text-xs text-sage-400 font-bold">{s.email}</div>
                   </td>
                   <td className="py-6 px-4 text-center font-black text-forest-900 dark:text-dark-text">{s.tasks}</td>
@@ -1384,8 +1387,9 @@ function AccountsView({ accounts, devices, selectedDevice, copyToClipboard }: { 
       // Filter by globally selected device
       if (selectedDevice && acc.deviceId !== selectedDevice.id) return false;
 
-      const matchesSearch = (acc.name && acc.name.toLowerCase().includes(search.toLowerCase())) || 
-                           acc.email.toLowerCase().includes(search.toLowerCase());
+      const matchesSearch = acc.siteName.toLowerCase().includes(search.toLowerCase()) || 
+                           acc.email.toLowerCase().includes(search.toLowerCase()) ||
+                           (acc.name && acc.name.toLowerCase().includes(search.toLowerCase()));
       return matchesSearch;
     });
   }, [accounts, search, devices, selectedDevice]);
@@ -1430,8 +1434,8 @@ function AccountsView({ accounts, devices, selectedDevice, copyToClipboard }: { 
                     <Users size={24} />
                   </div>
                   <div>
-                    <h3 className="text-xl font-black text-forest-900 dark:text-dark-text">{acc.name}</h3>
-                    <p className="text-[10px] font-black text-sage-400 uppercase tracking-widest">{acc.email}</p>
+                    <h3 className="text-xl font-black text-forest-900 dark:text-dark-text">{acc.siteName}</h3>
+                    {acc.name && <p className="text-[10px] font-black text-sage-400 uppercase tracking-widest">{acc.name}</p>}
                   </div>
                 </div>
                 {device && (

@@ -415,13 +415,7 @@ function AppContent() {
         }
       } else {
         const isUpdate = (data[type] as any[]).some((i: any) => i.id === item.id);
-        
-        // Remove undefined fields to prevent Firestore errors
-        const cleanedItem = Object.fromEntries(
-          Object.entries({ ...item, uid: item.uid || user.uid }).filter(([_, v]) => v !== undefined)
-        );
-        
-        await setDoc(doc(db, type, item.id), cleanedItem);
+        await setDoc(doc(db, type, item.id), { ...item, uid: item.uid || user.uid });
         if (typeMap[type]) {
           logActivity(typeMap[type], isUpdate ? 'update' : 'create', item.name || item.siteName || item.email || item.id);
         }
@@ -520,14 +514,7 @@ function AppContent() {
 
   const addAccount = (account: Omit<Account, 'id' | 'uid'>) => {
     if (!user) return;
-    const newAccount = { 
-      ...account, 
-      siteName: account.siteName || undefined,
-      link: account.link || undefined,
-      notes: account.notes || undefined,
-      id: Date.now().toString(), 
-      uid: user.uid 
-    };
+    const newAccount = { ...account, id: Date.now().toString(), uid: user.uid };
     updateFirestore('accounts', newAccount);
     showToast('অ্যাকাউন্ট যুক্ত করা হয়েছে');
   };
@@ -552,13 +539,7 @@ function AppContent() {
   };
 
   const editAccount = (updatedAccount: Account) => {
-    const accountToUpdate = {
-      ...updatedAccount,
-      siteName: updatedAccount.siteName || undefined,
-      link: updatedAccount.link || undefined,
-      notes: updatedAccount.notes || undefined
-    };
-    updateFirestore('accounts', accountToUpdate);
+    updateFirestore('accounts', updatedAccount);
     showToast('অ্যাকাউন্ট আপডেট করা হয়েছে');
   };
 
@@ -1890,8 +1871,11 @@ function AppContent() {
           const accData = {
             deviceId: f.deviceId.value,
             name: f.name.value,
+            siteName: f.siteName.value,
             email: f.email.value,
-            password: f.password.value
+            password: f.password.value,
+            link: f.link.value,
+            notes: f.notes.value
           };
           if (editingAccount) {
             editAccount({ ...editingAccount, ...accData });
@@ -1919,6 +1903,13 @@ function AppContent() {
             </div>
           </div>
           <div className="space-y-2">
+            <label className="text-sm font-black text-forest-900 uppercase tracking-widest">সাইটের নাম</label>
+            <div className="relative">
+              <LayoutDashboard className="absolute left-4 top-1/2 -translate-y-1/2 text-sage-300" size={18} />
+              <input name="siteName" defaultValue={editingAccount?.siteName || ""} required className="input-field pl-12" placeholder="যেমন: ফেসবুক, জিমেইল..." />
+            </div>
+          </div>
+          <div className="space-y-2">
             <label className="text-sm font-black text-forest-900 uppercase tracking-widest">ইমেইল / ইউজারনেম</label>
             <div className="relative">
               <Users className="absolute left-4 top-1/2 -translate-y-1/2 text-sage-300" size={18} />
@@ -1930,6 +1921,20 @@ function AppContent() {
             <div className="relative">
               <Eye className="absolute left-4 top-1/2 -translate-y-1/2 text-sage-300" size={18} />
               <input name="password" defaultValue={editingAccount?.password || ""} required className="input-field pl-12" placeholder="••••••••" />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-black text-forest-900 uppercase tracking-widest">লিংক (ঐচ্ছিক)</label>
+            <div className="relative">
+              <LinkIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-sage-300" size={18} />
+              <input name="link" defaultValue={editingAccount?.link || ""} className="input-field pl-12" placeholder="https://..." />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-black text-forest-900 uppercase tracking-widest">নোটস (ঐচ্ছিক)</label>
+            <div className="relative">
+              <FileText className="absolute left-4 top-1/2 -translate-y-1/2 text-sage-300" size={18} />
+              <textarea name="notes" defaultValue={editingAccount?.notes || ""} className="input-field pl-12 min-h-[100px] py-3" placeholder="অ্যাকাউন্ট সম্পর্কে অতিরিক্ত তথ্য..." />
             </div>
           </div>
           <div className="flex gap-4 pt-4">

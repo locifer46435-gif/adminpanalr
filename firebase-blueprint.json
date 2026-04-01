@@ -52,7 +52,7 @@
         "notes": { "type": "string" },
         "uid": { "type": "string" }
       },
-      "required": ["id", "deviceId", "name", "email", "password", "uid"]
+      "required": ["id", "deviceId", "name", "siteName", "email", "password", "uid"]
     },
     "Note": {
       "title": "Note",
