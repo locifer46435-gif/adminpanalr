@@ -52,7 +52,7 @@
         "notes": { "type": "string" },
         "uid": { "type": "string" }
       },
-      "required": ["id", "deviceId", "name", "siteName", "email", "password", "uid"]
+      "required": ["id", "deviceId", "name", "email", "password", "uid"]
     },
     "Note": {
       "title": "Note",
@@ -111,6 +111,20 @@
       },
       "required": ["id", "taskId", "taskName", "message", "timestamp", "status", "uid"]
     },
+    "Activity": {
+      "title": "Activity",
+      "description": "System activity logs",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "type": { "type": "string", "enum": ["task", "account", "note", "link", "category", "device"] },
+        "action": { "type": "string", "enum": ["create", "update", "delete"] },
+        "name": { "type": "string" },
+        "timestamp": { "type": "string" },
+        "uid": { "type": "string" }
+      },
+      "required": ["id", "type", "action", "name", "timestamp", "uid"]
+    },
     "User": {
       "title": "User",
       "description": "User settings and profile",
@@ -155,6 +169,10 @@
     "/issues/{issueId}": {
       "schema": "Issue",
       "description": "Collection of issues"
+    },
+    "/activities/{activityId}": {
+      "schema": "Activity",
+      "description": "Collection of activity logs"
     },
     "/users/{userId}": {
       "schema": "User",

@@ -24,7 +24,7 @@ export interface Account {
   id: string;
   deviceId: string;
   name: string;
-  siteName: string;
+  siteName?: string;
   email: string;
   password: string;
   link?: string;

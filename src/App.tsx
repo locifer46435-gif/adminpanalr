@@ -32,7 +32,8 @@ import {
   Flag,
   Sun,
   Moon,
-  List
+  List,
+  AlertCircle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { AppData, Task, Category, Device, Account, Note, Link, Report, TaskIssue, Activity } from './types';
@@ -272,6 +273,8 @@ function AppContent() {
   const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
   const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
   const [isNotificationsModalOpen, setIsNotificationsModalOpen] = useState(false);
+  const [isResetModalOpen, setIsResetModalOpen] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
   
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [editingAccount, setEditingAccount] = useState<Account | null>(null);
@@ -396,16 +399,31 @@ function AppContent() {
     if (!user) return;
     const path = `${type}/${item.id}`;
     try {
+      const typeMap: Record<string, Activity['type']> = {
+        tasks: 'task',
+        accounts: 'account',
+        notes: 'note',
+        links: 'link',
+        categories: 'category',
+        devices: 'device'
+      };
+
       if (isDelete) {
         await deleteDoc(doc(db, type, item.id));
-        if (['tasks', 'accounts', 'notes', 'links', 'categories', 'devices'].includes(type)) {
-          logActivity(type as any, 'delete', item.name || item.siteName || item.email || item.id);
+        if (typeMap[type]) {
+          logActivity(typeMap[type], 'delete', item.name || item.siteName || item.email || item.id);
         }
       } else {
         const isUpdate = (data[type] as any[]).some((i: any) => i.id === item.id);
-        await setDoc(doc(db, type, item.id), { ...item, uid: item.uid || user.uid });
-        if (['tasks', 'accounts', 'notes', 'links', 'categories', 'devices'].includes(type)) {
-          logActivity(type as any, isUpdate ? 'update' : 'create', item.name || item.siteName || item.email || item.id);
+        
+        // Remove undefined fields to prevent Firestore errors
+        const cleanedItem = Object.fromEntries(
+          Object.entries({ ...item, uid: item.uid || user.uid }).filter(([_, v]) => v !== undefined)
+        );
+        
+        await setDoc(doc(db, type, item.id), cleanedItem);
+        if (typeMap[type]) {
+          logActivity(typeMap[type], isUpdate ? 'update' : 'create', item.name || item.siteName || item.email || item.id);
         }
       }
     } catch (error) {
@@ -502,7 +520,14 @@ function AppContent() {
 
   const addAccount = (account: Omit<Account, 'id' | 'uid'>) => {
     if (!user) return;
-    const newAccount = { ...account, id: Date.now().toString(), uid: user.uid };
+    const newAccount = { 
+      ...account, 
+      siteName: account.siteName || undefined,
+      link: account.link || undefined,
+      notes: account.notes || undefined,
+      id: Date.now().toString(), 
+      uid: user.uid 
+    };
     updateFirestore('accounts', newAccount);
     showToast('অ্যাকাউন্ট যুক্ত করা হয়েছে');
   };
@@ -527,13 +552,41 @@ function AppContent() {
   };
 
   const editAccount = (updatedAccount: Account) => {
-    updateFirestore('accounts', updatedAccount);
+    const accountToUpdate = {
+      ...updatedAccount,
+      siteName: updatedAccount.siteName || undefined,
+      link: updatedAccount.link || undefined,
+      notes: updatedAccount.notes || undefined
+    };
+    updateFirestore('accounts', accountToUpdate);
     showToast('অ্যাকাউন্ট আপডেট করা হয়েছে');
   };
 
   const editNote = (updatedNote: Note) => {
     updateFirestore('notes', updatedNote);
     showToast('নোট আপডেট করা হয়েছে');
+  };
+
+  const handleResetData = async () => {
+    setIsResetting(true);
+    try {
+      const collectionsToClear: (keyof AppData)[] = ['tasks', 'categories', 'accounts', 'devices', 'notes', 'links', 'reports', 'issues', 'activities'];
+      
+      for (const colName of collectionsToClear) {
+        const q = query(collection(db, colName));
+        const snapshot = await getDocs(q);
+        const deletePromises = snapshot.docs.map(doc => deleteDoc(doc.ref));
+        await Promise.all(deletePromises);
+      }
+      
+      showToast('সমস্ত ডেমো ডাটা সফলভাবে মুছে ফেলা হয়েছে');
+      setIsResetModalOpen(false);
+    } catch (error) {
+      console.error('Error resetting data:', error);
+      showToast('ডাটা মুছতে সমস্যা হয়েছে', 'error');
+    } finally {
+      setIsResetting(false);
+    }
   };
 
   const deleteItem = (type: keyof AppData, id: string) => {
@@ -1659,6 +1712,51 @@ function AppContent() {
       <ConfirmModal />
       <NotificationsModal />
 
+      {/* Reset Data Modal */}
+      <Modal 
+        isOpen={isResetModalOpen} 
+        onClose={() => !isResetting && setIsResetModalOpen(false)} 
+        title="সমস্ত ডাটা মুছুন"
+      >
+        <div className="space-y-8">
+          <div className="p-8 bg-rose-50 rounded-[2.5rem] border border-rose-100 flex items-center gap-6">
+            <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center text-rose-500 shadow-sm">
+              <AlertCircle size={32} />
+            </div>
+            <div className="flex-1">
+              <h4 className="text-xl font-black text-rose-900">আপনি কি নিশ্চিত?</h4>
+              <p className="text-rose-700/70 font-bold leading-tight mt-1">
+                এটি করলে অ্যাপের সমস্ত টাস্ক, রিপোর্ট, অ্যাকাউন্ট এবং অন্যান্য তথ্য চিরতরে মুছে যাবে। এটি আর ফিরে পাওয়া সম্ভব নয়।
+              </p>
+            </div>
+          </div>
+
+          <div className="flex gap-4">
+            <button 
+              disabled={isResetting}
+              onClick={() => setIsResetModalOpen(false)}
+              className="flex-1 h-16 bg-sage-50 text-sage-400 rounded-2xl font-black hover:bg-sage-100 transition-all disabled:opacity-50"
+            >
+              বাতিল
+            </button>
+            <button 
+              disabled={isResetting}
+              onClick={handleResetData}
+              className="flex-[2] h-16 bg-rose-600 text-white rounded-2xl font-black shadow-lg shadow-rose-600/20 hover:bg-rose-700 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
+            >
+              {isResetting ? (
+                <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              ) : (
+                <>
+                  <Trash2 size={20} />
+                  হ্যাঁ, সব মুছে দিন
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      </Modal>
+
       {/* Task Modal (Add/Edit) */}
       <Modal 
         isOpen={isTaskModalOpen || !!editingTask} 
@@ -1792,11 +1890,8 @@ function AppContent() {
           const accData = {
             deviceId: f.deviceId.value,
             name: f.name.value,
-            siteName: f.siteName.value,
             email: f.email.value,
-            password: f.password.value,
-            link: f.link.value,
-            notes: f.notes.value
+            password: f.password.value
           };
           if (editingAccount) {
             editAccount({ ...editingAccount, ...accData });
@@ -1824,13 +1919,6 @@ function AppContent() {
             </div>
           </div>
           <div className="space-y-2">
-            <label className="text-sm font-black text-forest-900 uppercase tracking-widest">সাইটের নাম</label>
-            <div className="relative">
-              <LayoutDashboard className="absolute left-4 top-1/2 -translate-y-1/2 text-sage-300" size={18} />
-              <input name="siteName" defaultValue={editingAccount?.siteName || ""} required className="input-field pl-12" placeholder="যেমন: ফেসবুক, জিমেইল..." />
-            </div>
-          </div>
-          <div className="space-y-2">
             <label className="text-sm font-black text-forest-900 uppercase tracking-widest">ইমেইল / ইউজারনেম</label>
             <div className="relative">
               <Users className="absolute left-4 top-1/2 -translate-y-1/2 text-sage-300" size={18} />
@@ -1842,20 +1930,6 @@ function AppContent() {
             <div className="relative">
               <Eye className="absolute left-4 top-1/2 -translate-y-1/2 text-sage-300" size={18} />
               <input name="password" defaultValue={editingAccount?.password || ""} required className="input-field pl-12" placeholder="••••••••" />
-            </div>
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm font-black text-forest-900 uppercase tracking-widest">লিংক (ঐচ্ছিক)</label>
-            <div className="relative">
-              <LinkIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-sage-300" size={18} />
-              <input name="link" defaultValue={editingAccount?.link || ""} className="input-field pl-12" placeholder="https://..." />
-            </div>
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm font-black text-forest-900 uppercase tracking-widest">নোটস (ঐচ্ছিক)</label>
-            <div className="relative">
-              <FileText className="absolute left-4 top-1/2 -translate-y-1/2 text-sage-300" size={18} />
-              <textarea name="notes" defaultValue={editingAccount?.notes || ""} className="input-field pl-12 min-h-[100px] py-3" placeholder="অ্যাকাউন্ট সম্পর্কে অতিরিক্ত তথ্য..." />
             </div>
           </div>
           <div className="flex gap-4 pt-4">
