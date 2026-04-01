@@ -294,6 +294,7 @@ export default function UserApp() {
   };
 
   const [reportingTask, setReportingTask] = useState<Task | null>(null);
+  const [reportReason, setReportReason] = useState('');
 
   const handleReportIssue = async () => {
     if (!reportingTask) return;
@@ -304,7 +305,7 @@ export default function UserApp() {
         id: issueRef.id,
         taskId: reportingTask.id,
         taskName: reportingTask.name,
-        message: 'User reported an issue with this task.',
+        message: reportReason || 'User reported an issue with this task.',
         timestamp: new Date().toISOString(),
         status: 'pending',
         uid: user?.uid || ''
@@ -313,6 +314,7 @@ export default function UserApp() {
       await setDoc(issueRef, issue);
       showToast('রিপোর্ট সফলভাবে পাঠানো হয়েছে');
       setReportingTask(null);
+      setReportReason('');
     } catch (error) {
       handleFirestoreError(error, OperationType.CREATE, 'issues');
       showToast('কিছু ভুল হয়েছে', 'error');
@@ -572,7 +574,10 @@ export default function UserApp() {
         {reportingTask && (
           <Modal 
             isOpen={!!reportingTask} 
-            onClose={() => setReportingTask(null)} 
+            onClose={() => {
+              setReportingTask(null);
+              setReportReason('');
+            }} 
             title="রিপোর্ট নিশ্চিত করুন"
           >
             <div className="space-y-8">
@@ -588,9 +593,22 @@ export default function UserApp() {
                 </div>
               </div>
 
+              <div className="space-y-3">
+                <label className="text-sm font-black text-sage-400 dark:text-dark-text/50 uppercase tracking-widest ml-4">রিপোর্ট করার কারণ (অপশনাল)</label>
+                <textarea 
+                  value={reportReason}
+                  onChange={(e) => setReportReason(e.target.value)}
+                  placeholder="কেন রিপোর্ট করছেন তা এখানে লিখুন..."
+                  className="w-full min-h-[120px] p-6 bg-sage-50 dark:bg-dark-border border border-sage-100 dark:border-dark-border rounded-[2rem] text-forest-900 dark:text-dark-text font-bold focus:outline-none focus:ring-4 focus:ring-forest-900/5 dark:focus:ring-dark-accent/10 transition-all resize-none"
+                />
+              </div>
+
               <div className="flex gap-4">
                 <button 
-                  onClick={() => setReportingTask(null)}
+                  onClick={() => {
+                    setReportingTask(null);
+                    setReportReason('');
+                  }}
                   className="flex-1 h-16 bg-sage-50 dark:bg-dark-border text-sage-400 rounded-2xl font-black hover:bg-sage-100 transition-all"
                 >
                   বাতিল

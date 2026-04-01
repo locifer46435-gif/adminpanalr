@@ -581,6 +581,30 @@ function AppContent() {
       showToast('সমস্যাটি সমাধান করা হয়েছে');
     };
 
+    const handleEditTaskFromIssue = (taskId: string) => {
+      const task = data.tasks.find(t => t.id === taskId);
+      if (task) {
+        setEditingTask(task);
+        setIsNotificationsModalOpen(false);
+      } else {
+        showToast('টাস্কটি খুঁজে পাওয়া যায়নি', 'error');
+      }
+    };
+
+    const handleDeleteTaskFromIssue = (taskId: string, issueId: string) => {
+      const task = data.tasks.find(t => t.id === taskId);
+      if (task) {
+        setConfirmDelete({ type: 'tasks', id: taskId });
+        // We don't resolve the issue here, let the user do it after deletion or automatically?
+        // Let's just close the notifications modal to show the confirm delete modal
+        setIsNotificationsModalOpen(false);
+      } else {
+        showToast('টাস্কটি ইতিমধ্যে মুছে ফেলা হয়েছে', 'error');
+        // If task is gone, maybe resolve the issue?
+        updateFirestore('issues', { id: issueId, status: 'resolved' } as any);
+      }
+    };
+
     return (
       <Modal isOpen={isNotificationsModalOpen} onClose={() => setIsNotificationsModalOpen(false)} title="নোটিফিকেশন">
         <div className="space-y-4">
@@ -590,26 +614,48 @@ function AppContent() {
             </div>
           ) : (
             pendingIssues.map(issue => (
-              <div key={issue.id} className="bg-sage-50 p-4 rounded-2xl border border-sage-100">
-                <div className="flex justify-between items-start mb-2">
-                  <h4 className="font-bold text-forest-900">{issue.taskName}</h4>
-                  <span className="text-xs text-sage-400">
-                    {issue.timestamp && !isNaN(new Date(issue.timestamp).getTime()) 
-                      ? new Date(issue.timestamp).toLocaleDateString() 
-                      : 'N/A'}
-                  </span>
+              <div key={issue.id} className="bg-sage-50 p-6 rounded-[2rem] border border-sage-100 space-y-4">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h4 className="font-black text-forest-900 text-lg">{issue.taskName}</h4>
+                    <p className="text-[10px] font-black text-sage-400 uppercase tracking-widest mt-1">
+                      {issue.timestamp && !isNaN(new Date(issue.timestamp).getTime()) 
+                        ? new Date(issue.timestamp).toLocaleString() 
+                        : 'N/A'}
+                    </p>
+                  </div>
+                  <span className="px-3 py-1 bg-rose-100 text-rose-600 text-[10px] font-black rounded-full uppercase tracking-widest">রিপোর্ট</span>
                 </div>
-                <p className="text-sm text-sage-500 mb-4">{issue.message}</p>
-                <div className="flex justify-end gap-2">
+                
+                <div className="p-4 bg-white rounded-2xl border border-sage-100">
+                  <p className="text-sm text-sage-500 font-medium leading-relaxed italic">"{issue.message}"</p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <button 
+                    onClick={() => handleEditTaskFromIssue(issue.taskId)}
+                    className="flex items-center justify-center gap-2 px-4 py-3 text-xs font-black text-forest-900 bg-white border border-sage-100 rounded-xl hover:bg-sage-50 transition-all"
+                  >
+                    <Edit2 size={14} /> সংশোধন করুন
+                  </button>
+                  <button 
+                    onClick={() => handleDeleteTaskFromIssue(issue.taskId, issue.id)}
+                    className="flex items-center justify-center gap-2 px-4 py-3 text-xs font-black text-rose-500 bg-rose-50 rounded-xl hover:bg-rose-100 transition-all"
+                  >
+                    <Trash2 size={14} /> টাস্ক মুছুন
+                  </button>
+                </div>
+
+                <div className="flex gap-2 pt-2 border-t border-sage-100">
                   <button 
                     onClick={() => deleteItem('issues', issue.id)}
-                    className="px-4 py-2 text-xs font-bold text-rose-500 bg-rose-50 rounded-lg hover:bg-rose-100 transition-colors"
+                    className="flex-1 py-3 text-xs font-bold text-sage-400 hover:text-rose-500 transition-colors"
                   >
-                    মুছে ফেলুন
+                    ইস্যু মুছুন
                   </button>
                   <button 
                     onClick={() => resolveIssue(issue)}
-                    className="px-4 py-2 text-xs font-bold text-white bg-forest-900 rounded-lg hover:bg-forest-800 transition-colors"
+                    className="flex-[2] py-3 text-xs font-black text-white bg-forest-900 rounded-xl hover:bg-forest-800 transition-all shadow-lg shadow-forest-900/10"
                   >
                     সমাধান হয়েছে
                   </button>
