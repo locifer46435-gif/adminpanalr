@@ -41,7 +41,8 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      return isAuthenticated();
+      // শুধুমাত্র নির্দিষ্ট অ্যাডমিন ইমেইলকে অ্যাডমিন হিসেবে গণ্য করুন
+      return isAuthenticated() && (request.auth.token.email == "muhammadalaminmeer@gmail.com" || request.auth.token.email == "alaminmir209@gmail.com" || request.auth.token.email == "muhammadalaminmeer@gmail.com");
     }
 
     function hasOnlyAllowedFields(fields) {

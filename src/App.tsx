@@ -276,6 +276,9 @@ function AppContent() {
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
   
+  const [filterCat, setFilterCat] = useState('all');
+  const [sortBy, setSortBy] = useState('newest');
+  
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [editingAccount, setEditingAccount] = useState<Account | null>(null);
   const [editingNote, setEditingNote] = useState<Note | null>(null);
@@ -572,6 +575,15 @@ function AppContent() {
 
   const deleteItem = (type: keyof AppData, id: string) => {
     updateFirestore(type, { id }, true);
+    
+    // If a task is deleted, also delete any associated issues
+    if (type === 'tasks') {
+      const associatedIssues = data.issues.filter(i => i.taskId === id);
+      associatedIssues.forEach(issue => {
+        updateFirestore('issues', { id: issue.id }, true);
+      });
+    }
+    
     showToast('সফলভাবে মুছে ফেলা হয়েছে', 'error');
     setConfirmDelete(null);
   };
@@ -626,17 +638,11 @@ function AppContent() {
     };
 
     const handleDeleteTaskFromIssue = (taskId: string, issueId: string) => {
-      const task = data.tasks.find(t => t.id === taskId);
-      if (task) {
-        setConfirmDelete({ type: 'tasks', id: taskId });
-        // We don't resolve the issue here, let the user do it after deletion or automatically?
-        // Let's just close the notifications modal to show the confirm delete modal
-        setIsNotificationsModalOpen(false);
-      } else {
-        showToast('টাস্কটি ইতিমধ্যে মুছে ফেলা হয়েছে', 'error');
-        // If task is gone, maybe resolve the issue?
-        updateFirestore('issues', { id: issueId, status: 'resolved' } as any);
-      }
+      // Permanently delete both the task and the issue
+      deleteItem('tasks', taskId);
+      deleteItem('issues', issueId);
+      showToast('টাস্ক এবং ইস্যু সফলভাবে মুছে ফেলা হয়েছে');
+      setIsNotificationsModalOpen(false);
     };
 
     return (
@@ -652,6 +658,11 @@ function AppContent() {
                 <div className="flex justify-between items-start">
                   <div>
                     <h4 className="font-black text-forest-900 text-lg">{issue.taskName}</h4>
+                    <p className="text-xs font-bold text-sage-400 mt-1">
+                      ক্যাটাগরি: {data.tasks.find(t => t.id === issue.taskId)?.categoryId 
+                        ? data.categories.find(c => c.id === data.tasks.find(t => t.id === issue.taskId)?.categoryId)?.name 
+                        : 'Unknown'}
+                    </p>
                     <p className="text-[10px] font-black text-sage-400 uppercase tracking-widest mt-1">
                       {issue.timestamp && !isNaN(new Date(issue.timestamp).getTime()) 
                         ? new Date(issue.timestamp).toLocaleString() 
@@ -861,9 +872,6 @@ function AppContent() {
   };
 
   const TaskPage = () => {
-    const [filterCat, setFilterCat] = useState('all');
-    const [sortBy, setSortBy] = useState('newest');
-
     const filteredTasks = data.tasks
       .filter(t => filterCat === 'all' || t.categoryId === filterCat)
       .sort((a, b) => {
@@ -954,9 +962,16 @@ function AppContent() {
                         {data.categories.find(c => c.id === task.categoryId)?.name || 'Unknown'}
                       </span>
                       {isReported && (
-                        <span className="text-[10px] font-black text-rose-600 bg-rose-100 px-3 py-1 rounded-full inline-flex items-center gap-1 uppercase tracking-widest">
-                          <Flag size={10} /> রিপোর্ট করা হয়েছে
-                        </span>
+                        <div className="flex flex-col gap-2">
+                          <span className="text-[10px] font-black text-rose-600 bg-rose-100 px-3 py-1 rounded-full inline-flex items-center gap-1 uppercase tracking-widest w-fit">
+                            <Flag size={10} /> রিপোর্ট করা হয়েছে
+                          </span>
+                          {data.issues.find(i => i.taskId === task.id)?.message && (
+                            <span className="text-xs text-rose-800 font-medium bg-rose-50 px-3 py-1 rounded-lg border border-rose-100">
+                              কারণ: {data.issues.find(i => i.taskId === task.id)?.message}
+                            </span>
+                          )}
+                        </div>
                       )}
                     </div>
                   </div>
@@ -1086,12 +1101,6 @@ function AppContent() {
                               </div>
                             </div>
                           </div>
-                          {acc.notes && (
-                            <div className="mt-4 p-4 bg-sage-50/30 rounded-2xl border border-dashed border-sage-200">
-                              <span className="text-[9px] font-black text-sage-400 uppercase tracking-widest block mb-1">নোটস</span>
-                              <p className="text-sm text-sage-600 font-medium leading-relaxed">{acc.notes}</p>
-                            </div>
-                          )}
                         </div>
                         <button onClick={(e) => { e.stopPropagation(); setConfirmDelete({ type: 'accounts', id: acc.id }); }} className="p-3 text-sage-200 hover:text-rose-500 hover:bg-rose-50 rounded-2xl transition-all ml-4">
                           <Trash2 size={20} />
@@ -1870,12 +1879,10 @@ function AppContent() {
           const f = e.target as any;
           const accData = {
             deviceId: f.deviceId.value,
-            name: f.name.value,
             siteName: f.siteName.value,
             email: f.email.value,
             password: f.password.value,
-            link: f.link.value,
-            notes: f.notes.value
+            link: f.link.value
           };
           if (editingAccount) {
             editAccount({ ...editingAccount, ...accData });
@@ -1893,13 +1900,6 @@ function AppContent() {
                 <option value="" disabled>ডিভাইস নির্বাচন করুন</option>
                 {data.devices.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
               </select>
-            </div>
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm font-black text-forest-900 uppercase tracking-widest">অ্যাকাউন্টের নাম</label>
-            <div className="relative">
-              <Users className="absolute left-4 top-1/2 -translate-y-1/2 text-sage-300" size={18} />
-              <input name="name" defaultValue={editingAccount?.name || ""} required className="input-field pl-12" placeholder="যেমন: জন ডো, পার্সোনাল ১..." />
             </div>
           </div>
           <div className="space-y-2">
@@ -1928,13 +1928,6 @@ function AppContent() {
             <div className="relative">
               <LinkIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-sage-300" size={18} />
               <input name="link" defaultValue={editingAccount?.link || ""} className="input-field pl-12" placeholder="https://..." />
-            </div>
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm font-black text-forest-900 uppercase tracking-widest">নোটস (ঐচ্ছিক)</label>
-            <div className="relative">
-              <FileText className="absolute left-4 top-1/2 -translate-y-1/2 text-sage-300" size={18} />
-              <textarea name="notes" defaultValue={editingAccount?.notes || ""} className="input-field pl-12 min-h-[100px] py-3" placeholder="অ্যাকাউন্ট সম্পর্কে অতিরিক্ত তথ্য..." />
             </div>
           </div>
           <div className="flex gap-4 pt-4">
