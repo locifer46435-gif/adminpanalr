@@ -23,7 +23,7 @@ export interface Device {
 export interface Account {
   id: string;
   deviceId: string;
-  name: string;
+  name?: string;
   siteName: string;
   email: string;
   password: string;
